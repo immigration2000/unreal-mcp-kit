@@ -1,0 +1,11 @@
+{
+  "name": "unreal-mcp-kit",
+  "description": "Set up Unreal Engine 5.8 official MCP in one command and give Claude engine-level gotcha knowledge. Includes setup-ue58-mcp (enables plugins, writes .mcp.json, drops in CLAUDE.md) and ue5-8-mcp (reflection rules, crash patterns, tool-search workflow).",
+  "version": "1.3.0",
+  "author": {
+    "name": "immigration2000"
+  },
+  "homepage": "https://github.com/immigration2000/unreal-mcp-kit",
+  "repository": "https://github.com/immigration2000/unreal-mcp-kit",
+  "license": "MIT"
+}

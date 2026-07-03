@@ -1,0 +1,13 @@
+{
+  "name": "unreal-mcp-kit",
+  "owner": {
+    "name": "immigration2000"
+  },
+  "plugins": [
+    {
+      "name": "unreal-mcp-kit",
+      "source": "./plugins/unreal-mcp-kit",
+      "description": "UE 5.8 official MCP (ModelContextProtocol) starter kit: one-command project setup + engine gotcha knowledge skill for Claude Code."
+    }
+  ]
+}

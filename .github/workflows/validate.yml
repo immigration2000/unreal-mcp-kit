@@ -1,0 +1,36 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON manifests
+        run: |
+          for f in .claude-plugin/marketplace.json plugins/unreal-mcp-kit/.claude-plugin/plugin.json; do
+            echo "checking $f"
+            python3 -m json.tool "$f" > /dev/null
+          done
+
+      - name: Check Python syntax
+        run: |
+          python3 -m py_compile plugins/unreal-mcp-kit/skills/setup-ue58-mcp/scripts/setup_project.py
+          echo "python OK"
+
+      - name: Verify required files exist
+        run: |
+          test -f plugins/unreal-mcp-kit/skills/ue5-8-mcp/SKILL.md
+          test -f plugins/unreal-mcp-kit/skills/setup-ue58-mcp/SKILL.md
+          test -f plugins/unreal-mcp-kit/skills/setup-ue58-mcp/templates/CLAUDE.md
+          echo "structure OK"
+
+      - name: Functional test (offline)
+        run: python3 tests/test_setup.py
+
+      # Optional (needs Claude Code in CI):
+      # - run: claude plugin validate
