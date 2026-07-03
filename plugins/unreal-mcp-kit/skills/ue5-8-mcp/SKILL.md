@@ -1,12 +1,12 @@
 ---
 name: ue5-8-mcp
 description: >-
-  Field manual for driving Unreal Engine 5.8 through the official ModelContextProtocol
-  (Unreal MCP) plugin. Use whenever working with UE5 / UE 5.8, the Unreal MCP / Toolset
-  Registry, Blueprints, Niagara, MetaSound, materials, UMG, level/actor editing, or any
-  Unreal editor automation over MCP. Injects engine-level gotchas (silent no-ops, crash
-  patterns, reflection rules) and the official plugin's tool-search workflow so the agent
-  does not rediscover them every session.
+  Field manual of engine-level gotchas for driving Unreal Engine 5 through MCP. Server-agnostic:
+  applies to UE 5.8's official ModelContextProtocol plugin AND UE 5.7 community servers
+  (VibeUE, UnrealClaude). Use whenever working with UE5 / UE 5.7 / UE 5.8, Blueprints, Niagara,
+  MetaSound, materials, UMG, level/actor editing, or any Unreal editor automation over MCP.
+  Injects gotchas (silent no-ops, crash patterns, reflection rules) and the tool-search
+  workflow so the agent does not rediscover them every session.
 ---
 
 # UE 5.8 공식 MCP — 에이전트 필드 매뉴얼
@@ -64,6 +64,16 @@ UE 5.8에 내장된 Epic 공식 `ModelContextProtocol` 플러그인("Unreal MCP"
 - **이름 표기 정확성:** UE 리플렉션은 정확한 표기를 요구. 잘못된 케이싱/스펠은 **에러 없이 no-op**.
 - **블루프린트 클래스 경로엔 `_C` 접미사** 필수: `/Game/X/BP_Foo.BP_Foo_C`. 빼면 클래스 못 찾음(조용히).
 - **그래프 변경 3단계:** 노드 생성 → 핀 연결 → **컴파일**. 컴파일 빠뜨리면 반영 안 됨.
+- **변수 기본값(내용물)은 툴로 안 채워질 때 Python으로 CDO에 넣는다.** 변수 생성 툴이 default 인자를 안 받으면 값이 빈 채로 남는다(사람이 Details 패널에 손으로 넣어야 하는 병목). 해결:
+  - 순서 **변수 추가 → `compile_blueprint` → CDO에 `set_editor_property` → 저장 → read-back**. 컴파일 전엔 CDO에 프로퍼티가 없어 실패.
+  - 클래스는 `_C`로 로드해 CDO를 얻고, 직접 대입 대신 `set_editor_property`(변경 이벤트+dirty).
+  ```python
+  import unreal
+  bp = unreal.load_asset('/Game/BP/BP_Foo'); unreal.BlueprintEditorLibrary.compile_blueprint(bp)
+  cdo = unreal.get_default_object(unreal.load_object(None, '/Game/BP/BP_Foo.BP_Foo_C'))
+  cdo.set_editor_property("Health", 100.0)      # 배열/구조체면 list/dict/struct
+  unreal.EditorAssetSubsystem().save_asset('/Game/BP/BP_Foo')
+  ```
 - **프로퍼티 변경 후 `PostEditChangeProperty`** 필요한 경우 있음. 에디터/직렬화에 반영 안 되면 이걸 의심.
 - **비동기 에셋 작업은 블로킹 안 함** → 생성 직후 바로 참조하면 아직 로드 전일 수 있음. 완료 확인 후 사용.
 
@@ -72,6 +82,11 @@ UE 5.8에 내장된 Epic 공식 `ModelContextProtocol` 플러그인("Unreal MCP"
 - **액터 연타(rapid ops)** → 크래시. 대량 작업은 배치를 쪼개고 사이에 검증.
 - **MetaSound: 스칼라를 오디오 핀에 직결**(예: Multiply 출력 → Audio 핀) → 크래시. 핀 타입 정확히.
 - **Niagara / MetaSound는 편집 후 PIE 전에 Save** 안 하면 크래시/무동작.
+
+### 모달 다이얼로그 = MCP 정지 (게임 스레드 블로킹)
+- 모달(`FMessageDialog`)은 게임 스레드를 막는다. MCP 툴도 게임 스레드에서 직렬 실행되므로 **모달이 떠 있으면 MCP 서버가 응답을 멈춘다**(연결 hang) → 에이전트가 그 창을 못 닫는다. 사람이 눌러야 진행됨.
+- **예방:** MCP 자동화 세션은 에디터를 **`-unattended`**로 실행 → `FMessageDialog`/`EditorDialog`가 즉시 DefaultValue 반환(모달 안 뜸). 단 기본값 자동응답이라 "저장?" 류 프롬프트 주의.
+- **탐지:** 모달에 의존하지 말고 **각 mutate 뒤 Output Log(`LogsToolset`)를 read**해 Error/Warning을 잡는다(모달 유발 에러는 보통 로그에도 남음).
 
 ## 5. 서브시스템별 함정
 - **Niagara:** "빈 것에서 생성"은 컴파일되지만 **입자 방출 안 함** → 동작 템플릿을 **복제**해서 수정. `script_usage`/dynamic input 제약 주의.

@@ -45,13 +45,24 @@
 ## 3. 표준 작업 루프 (반드시 이 순서)
 1. **계획**: 무엇을 만들지 + 어떤 툴셋/툴 쓸지 한 줄 요약.
 2. **실행**: 툴 하나씩 호출.
-3. **검증**: 변경한 에셋/액터를 read-back. 가능하면 뷰포트 캡쳐 또는 자동화 테스트로 눈으로 확인.
+3. **검증**: 변경한 에셋/액터를 read-back + **Output Log에서 Error/Warning 확인**. 가능하면 뷰포트 캡쳐 또는 자동화 테스트로 눈으로 확인.
 4. **보고**: 빌드/컴파일 로그 결과를 사용자에게 보고.
 5. **커밋**: 동작하면 `git commit -m "..."`.
 
 ## 4. 블루프린트 작업 규칙
 - 블루프린트 클래스 **경로 참조는 `_C` 접미사** 필요(예: `/Game/BP/BP_Foo.BP_Foo_C`). 빼면 조용히 실패.
 - 노드 그래프 변경은 **3단계(노드 추가 → 핀 연결 → 컴파일)**를 반드시 다 거친다. 컴파일 안 하면 반영 안 됨.
+- **변수는 만들기만 하지 말고 기본값(내용물)까지 채운다.** 변수 생성 툴에 default 인자가 있으면 그걸로 넣고, 없으면 **Python으로 CDO에 직접** 넣는다(에디터에 손으로 넣게 두지 말 것 — 그게 병목):
+  - 순서: **변수 추가 → 컴파일 → CDO에 `set_editor_property` → 저장 → read-back 검증**. (컴파일 전엔 CDO에 그 프로퍼티가 없음)
+  - 클래스는 `_C`로 로드. 직접 대입 말고 `set_editor_property` 사용(변경 이벤트+dirty 반영).
+  ```python
+  import unreal
+  bp = unreal.load_asset('/Game/BP/BP_Foo')
+  unreal.BlueprintEditorLibrary.compile_blueprint(bp)
+  cdo = unreal.get_default_object(unreal.load_object(None, '/Game/BP/BP_Foo.BP_Foo_C'))
+  cdo.set_editor_property("Health", 100.0)          # 배열/구조체면 list/dict/struct 그대로
+  unreal.EditorAssetSubsystem().save_asset('/Game/BP/BP_Foo')
+  ```
 - 프로퍼티 변경 후 `PostEditChangeProperty`가 필요한 케이스가 있다 — 에디터에 반영 안 되면 의심.
 - **노드 레이아웃 정리는 기대하지 마라.** 로직 우선, 보기 좋은 정렬은 사용자가 수동으로. (실사용 후기: 정리 요청은 대부분 실패)
 - **Play(PIE) 중에는 블루프린트 편집 잠김**. 편집은 Stop 후에.
@@ -71,6 +82,11 @@
 - **Niagara / MetaSound는 편집 후 PIE 전에 저장(Save)**. 안 하면 크래시/무동작.
 - Niagara를 **"빈 것에서 생성"하면 컴파일은 되지만 입자가 안 나옴** → 동작하는 템플릿을 **복제(duplicate)** 해서 수정.
 - MetaSound: 스칼라(Multiply 등)를 **오디오 핀에 바로 연결하면 크래시**. 핀 타입 정확히 맞춰라.
+
+### 모달/에러 창 병목 회피
+- **이미 떠 있는 모달은 Claude가 못 닫는다.** 모달(`FMessageDialog`)은 게임 스레드를 막고 MCP 툴도 게임 스레드에서 도니, 모달이 뜬 동안 MCP가 멈춰서 사람이 눌러야 한다. → **예방 + 로그 탐지**로 간다.
+- **예방:** MCP 자동화 세션은 에디터를 **`-unattended`로 실행** → `FMessageDialog`/`EditorDialog`가 사람을 안 기다리고 기본값을 반환(모달 안 뜸). ⚠️ 자동으로 기본값을 답하므로 "저장할까요?" 같은 **파괴적 프롬프트에 주의**(기본값이 원치 않는 쪽일 수 있음). 일반 편집 세션엔 굳이 안 씀.
+- **탐지:** **각 mutate 뒤 Output Log를 read**해 Error/Warning을 확인하고 있으면 보고·수정한다(모달을 띄우는 에러는 대개 로그에도 남는다). `LogsToolset` 또는 콘솔 로그 사용.
 
 ## 8. 컨텍스트 / 토큰 관리
 - 언리얼 세션은 컨텍스트(~200k)를 빨리 먹는다.

@@ -4,12 +4,25 @@ All notable changes to unreal-mcp-kit.
 
 ## [1.7.0] - 2026-07-03
 ### Added
+- **Modal-dialog handling** documented (5.8 CLAUDE.md + `ue5-8-mcp`): modal dialogs block the
+  game thread, which also stalls the MCP server, so an already-open modal can't be dismissed by
+  the agent. Prevent by launching the editor with `-unattended` (dialogs auto-return defaults;
+  beware destructive prompts); detect by reading the Output Log for Error/Warning after each
+  mutate instead of relying on the modal.
+- **Blueprint variable default-value pattern** documented in the 5.8 CLAUDE.md template and the
+  `ue5-8-mcp` skill: create var → `compile_blueprint` → set on the CDO via `set_editor_property`
+  → save → read-back (load class with `_C`). Fixes the common bottleneck where the MCP creates
+  an empty variable but can't fill its default value.
 - **UE 5.7 support** via new `setup-ue57` skill. Since UE 5.7 has no official MCP plugin,
   it documents the community-server path: VibeUE (Blueprint/asset/editor tools, HTTP MCP on
   :8088) plus optional UnrealClaude (viewport capture + actor manipulation, MCP on :3000),
   Claude Code connection (`claude mcp add` via mcp-remote), and a 5.7 CLAUDE.md template
   (imports VibeUE's AGENTS.md.sample). The `ue5-8-mcp` gotcha skill is server-agnostic and
   applies to 5.7 as well.
+### Changed
+- Skill descriptions now gate by engine version so the correct one triggers without a router:
+  `setup-ue58-mcp` = UE 5.8+, `setup-ue57` = UE 5.7; `ue5-8-mcp` marked server-agnostic (5.7 + 5.8).
+- Removed dead `re` import from `setup_project.py` (unused since the deep-probe rewrite).
 
 ## [1.6.0] - 2026-07-03
 ### Changed

@@ -6,6 +6,7 @@ description: >-
   user works in a UE 5.7 project and wants MCP/Claude Code control: install VibeUE (Blueprint/
   asset/editor tools, HTTP MCP on :8088) and optionally UnrealClaude (viewport capture + actor
   manipulation, MCP on :3000), connect Claude Code, and drop in project instructions.
+  ONLY for UE 5.7 (no official MCP). For UE 5.8+, use the setup-ue58-mcp skill instead.
 ---
 
 # UE 5.7 셋업 — 커뮤니티 MCP 서버 (VibeUE + UnrealClaude)

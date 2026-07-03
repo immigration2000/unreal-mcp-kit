@@ -6,7 +6,8 @@ description: >-
   "set up MCP", "셋업", "wire up Unreal MCP", enable the MCP plugins/toolsets, generate
   .mcp.json, or drop in the CLAUDE.md playbook. Enables ModelContextProtocol + EditorToolset
   (and optional Niagara/UMG/Physics toolsets) in the .uproject, writes .mcp.json, and copies
-  the CLAUDE.md template.
+  the CLAUDE.md template. ONLY for UE 5.8+ (official MCP). For UE 5.7 (no official MCP),
+  use the setup-ue57 skill instead.
 ---
 
 # UE 5.8 MCP 프로젝트 원클릭 셋업
