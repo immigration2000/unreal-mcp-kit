@@ -148,69 +148,16 @@ def probe_server(port: int) -> str:
         return "down"
 
 
-# --- (실험) 실제 MCP 핸드셰이크로 툴셋 로드까지 확인. 불확실하면 절대 실패로 안 봄 ---
-KNOWN_WORK_TOOLSETS = ["SceneTools", "ActorTools", "ObjectTools", "MaterialTools",
-                       "MaterialInstanceTools", "BlueprintTools", "StaticMeshTools",
-                       "AssetTools", "PrimitiveTools", "TextureTools", "LogsToolset"]
-
-
-def _post(url, payload, headers, timeout=4):
-    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"),
-                                 headers=headers, method="POST")
-    return urllib.request.urlopen(req, timeout=timeout)
-
-
-def _extract_json(body: str):
-    objs = []
-    for line in body.splitlines():
-        s = line.strip()
-        if s.startswith("data:"):
-            s = s[5:].strip()
-        if s.startswith("{"):
-            try: objs.append(json.loads(s))
-            except Exception: pass
-    if not objs:
-        try: objs.append(json.loads(body))
-        except Exception: pass
-    return objs[-1] if objs else None
-
-
-def _collect_text(body: str) -> str:
-    obj = _extract_json(body)
-    return json.dumps(obj, ensure_ascii=False) if obj else body
-
-
+# raw-HTTP 툴셋 프로브는 이 서버에서 구조적으로 불가하여 폐기함.
+# 근거(실측): UE 5.8 MCP 서버는 tools/call 결과를 text/event-stream(SSE)로 돌려주면서
+# POST 응답 본문을 비운 채 연결을 닫는다. urllib 같은 단순 POST 클라이언트는 결과를 받을 수 없고
+# (MCP-Protocol-Version 헤더/버전 다운그레이드/별도 GET 스트림 모두 무효, GET=405),
+# 정식 MCP Streamable HTTP 클라이언트(예: Claude Code)만 소화한다.
+# 따라서 툴셋 로드 판정은 raw HTTP 로 하지 않는다 — 정석은 에이전트의 list_toolsets 호출.
 def deep_probe(port: int):
-    """returns (True|False|None, message). None = 판정 불가(실패로 취급 안 함)."""
-    base = f"http://127.0.0.1:{port}/mcp"
-    H = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
-    try:
-        init = {"jsonrpc": "2.0", "id": 1, "method": "initialize",
-                "params": {"protocolVersion": "2025-06-18", "capabilities": {},
-                           "clientInfo": {"name": "ue-mcp-kit-verify", "version": "1"}}}
-        r = _post(base, init, H)
-        sid = r.headers.get("Mcp-Session-Id")
-        r.read()
-        h2 = dict(H)
-        if sid:
-            h2["Mcp-Session-Id"] = sid
-        try:
-            _post(base, {"jsonrpc": "2.0", "method": "notifications/initialized"}, h2).read()
-        except Exception:
-            pass
-        call = {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
-                "params": {"name": "list_toolsets", "arguments": {}}}
-        text = _collect_text(_post(base, call, h2).read().decode("utf-8", "replace"))
-        # 실제 응답 포맷: "- Module.ToolsetName: 설명" 텍스트 리스트. 이름은 Toolset/Tools 로 끝남.
-        names = set(re.findall(r"[A-Za-z0-9_]+(?:Toolset|Tools)", text)) - {"ToolsetRegistry", "EditorToolset"}
-        work = sorted(names - {"AgentSkillToolset"})
-        if work:
-            return (True, f"작업 툴셋 {len(names)}개 로드 (예: {', '.join(work[:5])})")
-        if names == {"AgentSkillToolset"}:
-            return (False, "AgentSkillToolset만 감지 → EditorToolset 미로드(.uproject 추가 + 에디터 재시작)")
-        return (None, "HTTP 프로브로 판정 불가 → 에이전트에서 list_toolsets 로 확인(정석)")
-    except Exception as e:
-        return (None, f"HTTP 프로브 불가({type(e).__name__}) → 에이전트에서 list_toolsets 확인")
+    """항상 (None, 안내) 반환. 실패로 취급하지 않음."""
+    return (None, "이 서버는 raw HTTP 툴셋 프로브 미지원(tools/call=SSE, POST 본문 비움). "
+                  "툴셋 로드는 에이전트에서 list_toolsets 로 확인(정석).")
 
 
 def do_verify(root, port, deep=False):
@@ -266,7 +213,7 @@ def main():
     ap.add_argument("--no-autostart", action="store_true", help="Auto Start Server 자동설정 생략")
     ap.add_argument("--verify", action="store_true", help="파일 수정 없이 셋업/연결 진단")
     ap.add_argument("--deep", action="store_true",
-                    help="(실험) verify 시 실제 list_toolsets 호출로 툴셋 로드까지 확인")
+                    help="verify 시 안내 출력(이 서버는 raw HTTP 툴셋 프로브 미지원 → 에이전트 list_toolsets 로 확인)")
     a = ap.parse_args()
     root = Path(a.root).resolve()
 

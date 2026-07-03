@@ -68,7 +68,7 @@ claude --plugin-dir ./unreal-mcp-kit/plugins/unreal-mcp-kit
 python .../setup_project.py .                       # 셋업 (현재 폴더)
 python .../setup_project.py . --niagara --umg --physics   # 옵션 툴셋
 python .../setup_project.py . --verify              # 진단 (파일 수정 안 함)
-python .../setup_project.py . --verify --deep       # (실험) 실제 툴셋 로드까지 확인
+python .../setup_project.py . --verify --deep       # 안내만(이 서버는 raw HTTP 툴셋 프로브 미지원)
 python .../setup_project.py . --force               # CLAUDE.md 덮어쓰기
 python .../setup_project.py . --port 8000           # 포트 지정
 python .../setup_project.py . --no-backup           # .uproject 백업 생략

@@ -2,6 +2,17 @@
 
 All notable changes to unreal-mcp-kit.
 
+## [1.6.0] - 2026-07-03
+### Changed
+- **Retired the raw-HTTP toolset probe in `--deep`.** Wire-level investigation on a live
+  UE 5.8 editor confirmed the server returns `tools/call` results as `text/event-stream` while
+  closing the POST body empty (0 bytes); a simple `urllib` POST client can never receive it
+  (MCP-Protocol-Version header, delays, separate GET stream → 405, and protocol downgrade all
+  had no effect). Only a full MCP Streamable-HTTP client (e.g. Claude Code) consumes it.
+  `--deep` now just prints an informational note. The canonical toolset-load check is the
+  connected agent calling `list_toolsets` (confirmed: 19 toolsets on a working setup).
+- Removed now-dead helpers (`_post`, `_extract_json`, `_collect_text`, `KNOWN_WORK_TOOLSETS`).
+
 ## [1.5.0] - 2026-07-03
 ### Fixed
 - `--deep` toolset parsing now matches the real `list_toolsets` response format
