@@ -2,6 +2,17 @@
 
 All notable changes to unreal-mcp-kit.
 
+## [1.5.0] - 2026-07-03
+### Fixed
+- `--deep` toolset parsing now matches the real `list_toolsets` response format
+  (`- Module.ToolsetName: description` text list), correctly distinguishing work toolsets
+  from AgentSkillToolset-only. Validated against a live UE 5.8 editor's response (19 toolsets).
+### Note
+- The **canonical runtime check** is asking the connected agent to run `list_toolsets`
+  (reliable — it uses the agent's own MCP client). `--deep` is a best-effort HTTP convenience
+  and may still report "inconclusive" on some Streamable-HTTP session configs; that is not a
+  failure. Confirmed working via list_toolsets = success.
+
 ## [1.4.0] - 2026-07-03
 ### Added
 - Auto Start Server is now configured automatically: setup writes

@@ -175,6 +175,11 @@ def _extract_json(body: str):
     return objs[-1] if objs else None
 
 
+def _collect_text(body: str) -> str:
+    obj = _extract_json(body)
+    return json.dumps(obj, ensure_ascii=False) if obj else body
+
+
 def deep_probe(port: int):
     """returns (True|False|None, message). None = 판정 불가(실패로 취급 안 함)."""
     base = f"http://127.0.0.1:{port}/mcp"
@@ -195,17 +200,17 @@ def deep_probe(port: int):
             pass
         call = {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
                 "params": {"name": "list_toolsets", "arguments": {}}}
-        body = _post(base, call, h2).read().decode("utf-8", "replace")
-        obj = _extract_json(body)
-        text = json.dumps(obj, ensure_ascii=False) if obj else body
-        present = [k for k in KNOWN_WORK_TOOLSETS if k in text]
-        if present:
-            return (True, f"작업 툴셋 로드 확인: {', '.join(present)}")
-        if "AgentSkillToolset" in text:
+        text = _collect_text(_post(base, call, h2).read().decode("utf-8", "replace"))
+        # 실제 응답 포맷: "- Module.ToolsetName: 설명" 텍스트 리스트. 이름은 Toolset/Tools 로 끝남.
+        names = set(re.findall(r"[A-Za-z0-9_]+(?:Toolset|Tools)", text)) - {"ToolsetRegistry", "EditorToolset"}
+        work = sorted(names - {"AgentSkillToolset"})
+        if work:
+            return (True, f"작업 툴셋 {len(names)}개 로드 (예: {', '.join(work[:5])})")
+        if names == {"AgentSkillToolset"}:
             return (False, "AgentSkillToolset만 감지 → EditorToolset 미로드(.uproject 추가 + 에디터 재시작)")
-        return (None, "툴셋 목록 판정 불가 → 에디터에서 직접 list_toolsets 확인")
+        return (None, "HTTP 프로브로 판정 불가 → 에이전트에서 list_toolsets 로 확인(정석)")
     except Exception as e:
-        return (None, f"딥 프로브 불가({type(e).__name__}) → 에디터에서 직접 확인")
+        return (None, f"HTTP 프로브 불가({type(e).__name__}) → 에이전트에서 list_toolsets 확인")
 
 
 def do_verify(root, port, deep=False):

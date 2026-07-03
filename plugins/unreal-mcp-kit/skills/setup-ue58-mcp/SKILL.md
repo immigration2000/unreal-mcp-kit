@@ -32,11 +32,12 @@ description: >-
    - **Auto Start Server 자동 설정** — `Config/DefaultEditorPerProjectUserSettings.ini`에 `[/Script/ModelContextProtocolEngine.ModelContextProtocolSettings] bAutoStartServer=True` 병합(기존 내용 보존). `--no-autostart`로 생략.
 4. 스크립트 출력의 "남은 단계"를 사용자에게 그대로 전달:
    - **에디터 (재)시작**해 플러그인 로드(첫 셋업 1회 필수). Auto Start Server는 위에서 설정됐으니 **재시작만 하면 서버 자동 기동**(수동 체크 불필요).
-5. **셋업 검증(중요):** 에디터를 켠 뒤 `--verify`로 상태를 자동 진단한다. 조용한 부분 실패(툴셋 미로드/서버 미기동)를 여기서 잡는다.
+5. **셋업 검증:** 에디터를 켠 뒤 `--verify`로 파일/서버 상태를 자동 진단.
    ```bash
    python "<스크립트 경로>/setup_project.py" . --verify
    ```
-   통과하면 Claude Code에서 `list_toolsets`로 툴셋 확인 후 작업 시작.
+   - **툴셋 로드 여부의 정식 판정은 연결된 에이전트가 `list_toolsets`를 직접 호출**하는 것이다(에이전트 자체 MCP 클라이언트라 가장 정확). 작업 툴셋(SceneTools/ActorTools/BlueprintTools 등, ~19개)이 보이면 성공, `AgentSkillToolset` 하나뿐이면 `EditorToolset` 미로드.
+   - `--verify --deep`(HTTP 프로브)는 편의용 best-effort다. Streamable-HTTP 세션 구성에 따라 "판정 불가"로 나올 수 있는데 이는 실패가 아니며, 위 `list_toolsets` 결과가 정답이다.
 
 ## 핵심 주의 (검증됨)
 - **`EditorToolset`을 꼭 켜야** 씬/액터/블루프린트 툴셋이 뜬다. 안 켜면 `list_toolsets`에 `AgentSkillToolset` 하나뿐이고, 이때 `RefreshTools`는 소용없다(플러그인 활성 + 재시작이 정답).
