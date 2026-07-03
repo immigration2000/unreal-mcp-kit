@@ -2,6 +2,15 @@
 
 All notable changes to unreal-mcp-kit.
 
+## [1.7.0] - 2026-07-03
+### Added
+- **UE 5.7 support** via new `setup-ue57` skill. Since UE 5.7 has no official MCP plugin,
+  it documents the community-server path: VibeUE (Blueprint/asset/editor tools, HTTP MCP on
+  :8088) plus optional UnrealClaude (viewport capture + actor manipulation, MCP on :3000),
+  Claude Code connection (`claude mcp add` via mcp-remote), and a 5.7 CLAUDE.md template
+  (imports VibeUE's AGENTS.md.sample). The `ue5-8-mcp` gotcha skill is server-agnostic and
+  applies to 5.7 as well.
+
 ## [1.6.0] - 2026-07-03
 ### Changed
 - **Retired the raw-HTTP toolset probe in `--deep`.** Wire-level investigation on a live

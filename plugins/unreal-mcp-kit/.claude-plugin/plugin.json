@@ -1,7 +1,7 @@
 {
   "name": "unreal-mcp-kit",
-  "description": "Set up Unreal Engine 5.8 official MCP in one command and give Claude engine-level gotcha knowledge. Includes setup-ue58-mcp (enables plugins, writes .mcp.json, drops in CLAUDE.md) and ue5-8-mcp (reflection rules, crash patterns, tool-search workflow).",
-  "version": "1.6.0",
+  "description": "Set up Claude + Unreal Engine and inject engine-level gotcha knowledge. setup-ue58-mcp: one-command UE 5.8 official MCP setup (plugins, .mcp.json, CLAUDE.md, auto-start). setup-ue57: UE 5.7 path via community servers (VibeUE + optional UnrealClaude). ue5-8-mcp: reflection rules, crash patterns, tool-search workflow (server-agnostic, 5.7+5.8).",
+  "version": "1.7.0",
   "author": {
     "name": "immigration2000"
   },

@@ -7,7 +7,7 @@
     {
       "name": "unreal-mcp-kit",
       "source": "./plugins/unreal-mcp-kit",
-      "description": "UE 5.8 official MCP (ModelContextProtocol) starter kit: one-command project setup + engine gotcha knowledge skill for Claude Code."
+      "description": "Claude + Unreal Engine kit: UE 5.8 official MCP one-command setup, UE 5.7 community-server path (VibeUE/UnrealClaude), and engine-gotcha knowledge skill."
     }
   ]
 }
