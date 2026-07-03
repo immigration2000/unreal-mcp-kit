@@ -29,8 +29,9 @@ description: >-
    - **`.uproject.bak` 백업** 후, `Plugins`에 **`ModelContextProtocol` + `EditorToolset`**(+옵션) 을 `Enabled:true`로 추가/보정. 기존 플러그인은 삭제하지 않음(없는 것만 추가, 꺼진 것만 켬). (idempotent)
    - 프로젝트 루트에 **`.mcp.json`**(`unreal-mcp` → `http://127.0.0.1:8000/mcp`) 작성.
    - **`CLAUDE.md`** 템플릿을 프로젝트 루트에 복사(이미 있으면 건너뜀).
+   - **Auto Start Server 자동 설정** — `Config/DefaultEditorPerProjectUserSettings.ini`에 `[/Script/ModelContextProtocolEngine.ModelContextProtocolSettings] bAutoStartServer=True` 병합(기존 내용 보존). `--no-autostart`로 생략.
 4. 스크립트 출력의 "남은 단계"를 사용자에게 그대로 전달:
-   - **에디터 (재)시작**해 플러그인 로드. 서버 자동시작은 에디터 실행인자에 `-ModelContextProtocolStartServer` 추가 또는 Editor Preferences의 **Auto Start Server** 체크.
+   - **에디터 (재)시작**해 플러그인 로드(첫 셋업 1회 필수). Auto Start Server는 위에서 설정됐으니 **재시작만 하면 서버 자동 기동**(수동 체크 불필요).
 5. **셋업 검증(중요):** 에디터를 켠 뒤 `--verify`로 상태를 자동 진단한다. 조용한 부분 실패(툴셋 미로드/서버 미기동)를 여기서 잡는다.
    ```bash
    python "<스크립트 경로>/setup_project.py" . --verify

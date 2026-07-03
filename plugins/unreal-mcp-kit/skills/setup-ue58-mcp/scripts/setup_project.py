@@ -90,16 +90,49 @@ def copy_claude_md(root: Path, force: bool):
     shutil.copyfile(tpl, dst); print("[3/3] + CLAUDE.md 작성")
 
 
-def do_setup(root, wanted, port, force, backup):
+# Auto Start Server 를 프로젝트 기본 config 에 박아 '수동 체크' 제거 (검증된 섹션/키, 2026-07-03)
+MCP_INI_SECTION = "/Script/ModelContextProtocolEngine.ModelContextProtocolSettings"
+MCP_INI_KEY = "bAutoStartServer"
+
+
+def set_autostart(root: Path, value: str = "True"):
+    cfg = root / "Config"; cfg.mkdir(parents=True, exist_ok=True)
+    f = cfg / "DefaultEditorPerProjectUserSettings.ini"
+    lines = f.read_text(encoding="utf-8").splitlines() if f.exists() else []
+    hdr = f"[{MCP_INI_SECTION}]"
+    out, i, n, found, keyset = [], 0, len(lines), False, False
+    while i < n:
+        line = lines[i]
+        if line.strip() == hdr:
+            found = True; out.append(line); i += 1
+            while i < n and not lines[i].lstrip().startswith("["):
+                cur = lines[i]
+                if cur.strip().lower().startswith(MCP_INI_KEY.lower() + "="):
+                    if not keyset: out.append(f"{MCP_INI_KEY}={value}"); keyset = True
+                else:
+                    out.append(cur)
+                i += 1
+            if not keyset: out.append(f"{MCP_INI_KEY}={value}"); keyset = True
+            continue
+        out.append(line); i += 1
+    if not found:
+        if out and out[-1].strip() != "": out.append("")
+        out += [hdr, f"{MCP_INI_KEY}={value}"]
+    f.write_text("\n".join(out) + "\n", encoding="utf-8")
+    print("[cfg] Auto Start Server 설정 → Config/DefaultEditorPerProjectUserSettings.ini")
+
+
+def do_setup(root, wanted, port, force, backup, autostart=True):
     up = find_uproject(root)
     print(f"[1/3] .uproject: {up.name}")
     ensure_plugins(up, wanted, backup)
     write_mcp_json(root, port)
     copy_claude_md(root, force)
+    if autostart:
+        set_autostart(root)
     print("\n=== 남은 단계 ===")
-    print(" 1. 에디터를 (재)시작해 플러그인 로드.")
-    print("    서버 자동시작: 에디터 실행인자에 -ModelContextProtocolStartServer 추가,")
-    print("    또는 Editor Preferences > Model Context Protocol > Auto Start Server 체크.")
+    print(" 1. 에디터를 (재)시작해 플러그인 로드 (첫 셋업 시 1회 필수).")
+    print("    Auto Start Server 는 위에서 설정됨 → 재시작만 하면 서버가 자동 기동.")
     print(f" 2. 확인:  python setup_project.py . --verify")
 
 
@@ -195,6 +228,9 @@ def do_verify(root, port, deep=False):
         ok = False; print(BAD + f".mcp.json 없음/포트 불일치 → python setup_project.py . --port {port}")
     has_md = (root / "CLAUDE.md").exists()
     print((OK if has_md else WARN) + ("CLAUDE.md 존재" if has_md else "CLAUDE.md 없음(선택) → 재실행 시 생성"))
+    ini = root / "Config" / "DefaultEditorPerProjectUserSettings.ini"
+    auto = ini.exists() and "bautostartserver=true" in ini.read_text(encoding="utf-8").replace(" ", "").lower()
+    print((OK if auto else WARN) + ("Auto Start Server 설정됨" if auto else "Auto Start Server 미설정(선택) → 재실행 또는 에디터에서 체크"))
     if probe_server(port) == "up":
         print(OK + f"MCP 서버 응답 (127.0.0.1:{port})")
         if deep:
@@ -222,6 +258,7 @@ def main():
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--force", action="store_true", help="CLAUDE.md 덮어쓰기")
     ap.add_argument("--no-backup", action="store_true", help=".uproject 백업 생략")
+    ap.add_argument("--no-autostart", action="store_true", help="Auto Start Server 자동설정 생략")
     ap.add_argument("--verify", action="store_true", help="파일 수정 없이 셋업/연결 진단")
     ap.add_argument("--deep", action="store_true",
                     help="(실험) verify 시 실제 list_toolsets 호출로 툴셋 로드까지 확인")
@@ -231,7 +268,7 @@ def main():
     if a.verify:
         do_verify(root, a.port, a.deep)
     wanted = list(CORE) + [OPTIONAL[k] for k in OPTIONAL if getattr(a, k)]
-    do_setup(root, wanted, a.port, a.force, not a.no_backup)
+    do_setup(root, wanted, a.port, a.force, not a.no_backup, not a.no_autostart)
 
 
 if __name__ == "__main__":

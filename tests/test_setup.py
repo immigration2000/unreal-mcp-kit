@@ -36,6 +36,8 @@ def main():
         mcp = load(tmp / ".mcp.json")
         assert mcp["mcpServers"]["unreal-mcp"]["url"] == "http://127.0.0.1:8000/mcp", "mcp url 불일치"
         assert (tmp / "CLAUDE.md").exists(), "CLAUDE.md 미생성"
+        ini = tmp / "Config" / "DefaultEditorPerProjectUserSettings.ini"
+        assert ini.exists() and "bAutoStartServer=True" in ini.read_text(encoding="utf-8"), "Auto Start Server 미설정"
 
         # 2) 멱등성 (2회차에 중복 추가 없음)
         r2 = run(".", cwd=tmp)

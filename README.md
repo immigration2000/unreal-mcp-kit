@@ -54,8 +54,8 @@ claude --plugin-dir ./unreal-mcp-kit/plugins/unreal-mcp-kit
 2. 이렇게 말하기: **"이 프로젝트 UE MCP 셋업해줘"** (또는 `/unreal-mcp-kit:setup-ue58-mcp`).
    - Niagara/UMG/Physics도 필요하면 "니아가라·UMG·피직스 툴셋도" 라고 덧붙이면 `--niagara --umg --physics`로 실행됩니다.
    - 스크립트가 `.uproject.bak` 백업 후, 기존 플러그인은 보존하고 필요한 것만 추가합니다.
-3. **에디터 (재)시작**해 플러그인 로드 + 서버 기동:
-   - 서버 자동시작(택1): 에디터 바로가기 실행인자에 `-ModelContextProtocolStartServer` 추가 **또는** Editor Preferences > Model Context Protocol > **Auto Start Server** 체크.
+3. **에디터 (재)시작**해 플러그인 로드 (첫 셋업 시 1회 필수).
+   - **Auto Start Server는 셋업이 자동 설정**합니다(`Config/DefaultEditorPerProjectUserSettings.ini`) → 재시작만 하면 서버가 자동 기동. 수동 체크 불필요.
 4. **검증(권장):** 셋업이 조용히 반쪽만 됐는지 자동 진단.
    ```bash
    python plugins/unreal-mcp-kit/skills/setup-ue58-mcp/scripts/setup_project.py . --verify
@@ -72,6 +72,7 @@ python .../setup_project.py . --verify --deep       # (실험) 실제 툴셋 로
 python .../setup_project.py . --force               # CLAUDE.md 덮어쓰기
 python .../setup_project.py . --port 8000           # 포트 지정
 python .../setup_project.py . --no-backup           # .uproject 백업 생략
+python .../setup_project.py . --no-autostart        # Auto Start Server 자동설정 생략
 ```
 
 ---

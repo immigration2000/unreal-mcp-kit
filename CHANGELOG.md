@@ -2,6 +2,15 @@
 
 All notable changes to unreal-mcp-kit.
 
+## [1.4.0] - 2026-07-03
+### Added
+- Auto Start Server is now configured automatically: setup writes
+  `[/Script/ModelContextProtocolEngine.ModelContextProtocolSettings] bAutoStartServer=True`
+  into the project's `Config/DefaultEditorPerProjectUserSettings.ini` (preserves existing
+  sections/keys, idempotent). Removes the manual "Editor Preferences → Auto Start Server" step;
+  a restart is still needed once to load the newly enabled plugins. `--no-autostart` to skip.
+- `--verify` now reports whether Auto Start Server is configured.
+
 ## [1.3.0] - 2026-07-03
 ### Added
 - Offline functional test (`tests/test_setup.py` + `tests/sample.uproject`) that runs the setup
